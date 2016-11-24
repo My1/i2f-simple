@@ -19,6 +19,6 @@ function geti2fsettings($did) { //disctint ID for user
   $response = file_get_contents($url, false, $context);
 
   $data=json_decode($response,true);
-  echo $data["data"]["attributes"]["hosted_page_url"]
+  return $data["data"]["attributes"]["hosted_page_url"]
 }
 ?>
