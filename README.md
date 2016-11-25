@@ -5,7 +5,7 @@ I was pretty intrested when I first saw Instant 2FA (I usually abbreviate it jus
 
 I mean we have a library which is on itself less than 10kb, which is pretty nice, BUT: This thing pulls 11.7 MB, OVER A THOUSAND TIMES of its own size via composer, and that's not enough. This thing literally throws one exception after another, heck even a user not having 2 Factor enabled is handled as an exception, like seriously? IMHO, exceptions if they should ever be used (I dont like them, I rather put a small army of ifs before) they should be used for EXCEPTIONAL stuff, not for some joke like "the user doesnt have 2FA enabled".
 
-so I made it my mission to reverse the API and write small and SIMPLE PHP scripts for this thing, because it is a lot easier understanding a few small files all from the same dev with no outside dependencies than an 11 Megabyte behemoth from scripts of all kinds of devs.
+so I made it my mission to reverse the API and write small and SIMPLE PHP scripts for this thing, because it is a lot easier understanding a few small files all from the same dev with no outside dependencies rather than an 11 Megabyte behemoth from scripts of all kinds of devs, which may or may not be old, and with holes, but I wont assert anything on that but it IS possible.
 
 as always with my stuff, I release this under my [Open Source License](https://github.com/My1/My1-OSL/blob/master/My1-OSL.md)
 
@@ -14,3 +14,39 @@ I know that the start of this thing will be rough and there wont be much error h
 Any Help, like Issues and Pull requests are welcome.
 
 (also sorry if my commit count is a bit large, I am using browser GitHub)
+
+## Installation and Requirements
+I stay true to my words that this thing doesnt need much outside dependencies.
+First things first. We don't need no composer or anything like that.
+This thing has pretty much no requirements, but you do need cURL (because you need to be able to call the API).
+Also you need to either have a CA-Bundle of your trusted Root CAs ready (of course containing at least one cert of the [API](https://api.instant2fa.com/) Certificate Chain, you can also kick cert validation right into the bucket, but that's a BAD IDEA because it defeats the issue of using HTTPS for the API in the first place.
+Just download the Files (e.g. by using the Download option in the Browser
+
+Putting the Requirements of the technical side aside, there is something which is pretty obviously needed: a means to Identify the user, a `Distinct ID` as it's called by I2F. I recommend NOT to use any sensitive data like the E-Mail Address or anything like that. it is better to just use some generic data like for example a numeric User ID which is usually used as a means to identify the user anyway.
+Why I recommend generic data? Simple. The Distinct ID sent to the I2F API, and together with The IP Address and possibly other data that the Javascript from the I2F Form (like the URL), it is possible to associate the user to your site.
+Also considering I2F sits in the US and they dont really have the best privacy laws, it's generally not a good Idea (if it's even legal where you live) to transfer sensitive Data without a way to opt out.
+
+## Usage
+The Usage is fairly simple. While the Basics are explained at the [I2F Docs](http://docs.instant2fa.com/docs), there are some changes to what to do on the PHP side of things, but that doesnt change that you have to include a settings panel somewhere in the user area (the docs telling to throw it right below a password reset option is honestly one of the weirdest Ideas I saw, I mean you dont even have a user id at that time) so better put it close to other account security options wherea user can change their password and other stuff.
+
+after you decided where to put your forms and figured out the basic code, you just need the URL for the settings. This is something you can get by including `getsettings.php` and running `geti2fsettings` with the disctinct ID of the user.
+it just returns the Settings URL which you can include into your frontend snippet or false on an error (at least once I take care of error handling for that file.
+
+to actually Login a user we also follow the basic steps of the documentation and let the user login first, and get the Distinct ID.
+then we include `getlogin.php` and run `i2flogin`, yet again with the Distinct ID as parameter.
+This function tries to get a URL for authenticating the User via 2FA.
+
+if returns an empty string, (check with === because this function can also return false) it means that there is no URL, simply because the user doesnt have 2FA enabled.
+in contrast, if it retuns `false` it means there was an error somewhere, either with the specific request or with cURL itself.
+(I wrote it so it just silently logs the error in the file `i2f-log.txt` and returns false, but as per the license, you can change that)
+
+Now we get to the Intresting part. If we get a string with contents we have a URL for 2FA'ing the user. now you need to save the Distince ID of the user somewhere (possibly the `$_SESSION` because we need it later for further verification). Then we redirect the User to the 2FA page and make sure he cannot get anywhere in the logged in area. This can be done by either caging the user to the page so he cant get anywhere, not not fully establishing the session in a way it recognizes the User is logged in.
+
+after the User has entered his I2F credentials, we need to verify those. this isnt written yet, but I can explain how it basically works.
+As said before you need the Distinct ID, and also you need the token I2F gives you.
+You then need to include the PHP for the verification I write later, and call the function for the Validation.
+There are 3 Possible Scenarios that can play out.
+* Everything is nice, which means the user can get his session properly established.
+* The validation went out fine, but the Distinct ID That I2F returns with the token doesnt match the one we recorded. This probably means that someone manipulated the login by using a token he got from another account which does validate properly but throws out a different user.
+* The validation fails. According to the I2F Docs this can happen because the user entered his code wrong too many times, but it also may just mean some kind of possibly random error.
+* Of Course there's also scenario 4, with an error in other things (like the server is down, or curl having a problem, These will probably be logged quietly again.
