@@ -3,10 +3,6 @@ function i2flogin($did) { //you need some kind of distinct ID to identify the us
   $pub="pk_something";
   $sec="sk_something";
   $b64=base64_encode("$pub:$sec");
-  if(isset($_POST)&&$_POST) {
-    var_dump ($_POST);
-    die();
-  }
   $apiurl = 'https://api.instant2fa.com/verification-requests/';
   $curl=curl_init($apiurl);
   curl_setopt_array($curl,array(
@@ -17,7 +13,6 @@ function i2flogin($did) { //you need some kind of distinct ID to identify the us
   $response=curl_exec($curl);
   $cstat=curl_errno($curl);
   $status=curl_getinfo($curl,CURLINFO_HTTP_CODE);
-  //var_dump ($status);
   if($cstat==0) { //no problem, return the I2F URL
     if($status>=200&&$status<=299) {
       $data=json_decode($response,true);
