@@ -7,7 +7,7 @@ I mean we have a library which is on itself less than 10kb, which is pretty nice
 
 so I made it my mission to reverse the API and write small and SIMPLE PHP scripts for this thing, because it is a lot easier understanding a few small files all from the same dev with no outside dependencies rather than an 11 Megabyte behemoth from scripts of all kinds of devs, which may or may not be old, and with holes, but I wont assert anything on that but it IS possible.
 
-as always with my stuff, I release this under my [Open Source License](https://github.com/My1/My1-OSL/blob/master/My1-OSL.md)
+**as always with my stuff, I release this under my [Open Source License](https://github.com/My1/My1-OSL/blob/master/My1-OSL.md)**
 
 I know that the start of this thing will be rough and there wont be much error handling, but first this thing needs to work, handling errors is something I can do after the hard word.
 
@@ -44,9 +44,87 @@ Now we get to the Intresting part. If we get a string with contents we have a UR
 
 after the User has entered his I2F credentials, we need to verify those. this isnt written yet, but I can explain how it basically works.
 As said before you need the Distinct ID, and also you need the token I2F gives you.
-You then need to include the PHP for the verification I write later, and call the function for the Validation.
-There are 3 Possible Scenarios that can play out.
+
+You then need to include the PHP for the verification.
+There are 3 Possible main Scenarios that can play out.
 * Everything is nice, which means the user can get his session properly established.
 * The validation went out fine, but the Distinct ID That I2F returns with the token doesnt match the one we recorded. This probably means that someone manipulated the login by using a token he got from another account which does validate properly but throws out a different user.
 * The validation fails. According to the I2F Docs this can happen because the user entered his code wrong too many times, but it also may just mean some kind of possibly random error.
 * Of Course there's also scenario 4, with an error in other things (like the server is down, or curl having a problem, These will probably be logged quietly again.
+
+Well forget what I said back then we have two more, one which I couldnt know beforehand.
+* Of course there's the random error from I2f (like for example wrong key and whatnot)
+* Aside from that I2F also returns the time of the request, meaning that if the request comes earlier than the specified tolerance (in seconds) it says no.
+
+well now that we have the validation, using it is as simple as the name suggests. you just include the validate.php file and then you call the `i2fverify` function with the distinct ID and the token you got from I2F.
+
+## Examples
+### Display Settings page
+```php
+<?php
+require "getsettings.php";
+$id=getuseridfromsomewhere();
+$url=geti2fsettings($id);
+if($url) {
+  echo <<<END
+<iframe src="$url"></iframe>
+END;
+}
+else {
+echo "something is clearly wrong here."
+}
+?>
+```
+### Handle the login
+```php
+<?php
+require("getlogin.php");
+dosomethingtologin($user,$password);
+$id=getuseridfromsomewhere();
+session_start();
+$_SESSION["id"]=$id
+$url=i2flogin($id);
+if($url) {
+echo <<<END
+<div class="instant2fa"></div>
+<script src="https://js.instant2fa.com/hosted.js"></script>
+<script>
+    Instant2FAPage.configure({
+        element: document.querySelector('.instant2fa'),
+        uri: `$url` // this is the URL previously retrieved from the server
+    }, function(event) {
+        if (event.type === "verificationSuccess") {
+            var token = event.payload.token;
+            console.log("Verification token is: " + token);
+            
+            $.ajax({
+                method: 'POST',
+                url: 'localhost/i2f/i2f-logon2.php',
+                data: {
+                    instant2faToken: event.payload.token
+                }
+            });
+        }
+    });
+</script>
+END;
+}
+else {
+  dorestoflogin();
+}
+?>
+```
+### Check the validity of the I2F Token
+```php
+reqire "validate.php";
+session_start();
+$id=$_SESSION["id"];
+$result=i2fverify($id,$_POST["instant2faToken"]);
+if($result==true) {
+  unset $_SESSION["id"];
+  dorestoflogin();
+}
+else {
+  tryagainwithnewchallenge();
+}
+```
