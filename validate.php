@@ -1,8 +1,8 @@
 <?php
 function i2fverify($did,$token) { //you need some kind of distinct ID to identify the user, dont use sensitive data as it will be transferred to instant2fa.
   $tol=120; //time tolerance in secs
-  $pub="pk_9bb135ef94aa44a7a0f274b2cee9e32d";
-  $sec="sk_645fd1759b9c4d06b8409696685a7814";
+  $pub="pk_something";
+  $sec="sk_something";
   $b64=base64_encode("$pub:$sec");
   $apiurl = 'https://api.instant2fa.com/verification-response-tokens/'.$token.'/';
   $curl=curl_init($apiurl);
