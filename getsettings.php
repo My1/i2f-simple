@@ -1,5 +1,5 @@
 <?php
-function geti2fsettings($did) { //disctint ID for user
+function i2fconfig($did) { //disctint ID for user
   $pub="pk_something";
   $sec="sk_something";
   $b64=base64_encode("$pub:$sec");
