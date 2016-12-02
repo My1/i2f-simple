@@ -3,7 +3,7 @@ simple, smaller version of the instant2FA library
 
 I was pretty intrested when I first saw Instant 2FA (I usually abbreviate it just with I2F) but as soon as I saw the PHP library, I just thought "well, no, this needs work".
 
-I mean we have a library which is on itself less than 10kb, which is pretty nice, BUT: This thing pulls 11.7 MB, OVER A THOUSAND TIMES of its own size via composer, and that's not enough. This thing literally throws one exception after another, heck even a user not having 2 Factor enabled is handled as an exception, like seriously? IMHO, exceptions if they should ever be used (I dont like them, I rather put a small army of ifs before) they should be used for EXCEPTIONAL stuff, not for some joke like "the user doesnt have 2FA enabled".
+I mean we have a library which is on itself less than 10kb, which is pretty nice, BUT: This thing pulls 11.7 MB, OVER A THOUSAND TIMES of its own size via composer, all in 3195 files, made by various devs, do you really want to audit that? And that's not enough. This thing literally throws one exception after another, heck even a user not having 2 Factor enabled is handled as an exception, like seriously? IMHO, exceptions if they should ever be used (I dont like them, I rather put a small army of ifs before) they should be used for EXCEPTIONAL stuff, not for some joke like "the user doesnt have 2FA enabled".
 
 so I made it my mission to reverse the API and write small and SIMPLE PHP scripts for this thing, because it is a lot easier understanding a few small files all from the same dev with no outside dependencies rather than an 11 Megabyte behemoth from scripts of all kinds of devs, which may or may not be old, and with holes, but I wont assert anything on that but it IS possible.
 
@@ -128,3 +128,11 @@ else {
   tryagainwithnewchallenge();
 }
 ```
+## How did I make this?
+a few people may ask how I made this.
+well since trying to trace literally anything in 3,2k files is probably a waste of time (and OOP really isnt my forte) I went for a simpler approach. The I2f library allowed to change the domain of the API server, sp I just kicked this thing to localhost, and first kept an eye to the logs, which URLs it would try to access. after that I populated that URL with [this nice little script](https://gist.github.com/magnetikonline/650e30e485c0f91f2f40) to dump the hell out of the request. then I used the dump and analyzed that to properly recreate the request and with some experiments I took a few fields that arent set anyway out of the reqest to slim it a bit down, because in very busy environments it's every byte that counts, right?
+## Last words
+Well for starters thanks for making this Project possible:
+* clef/instant2fa for providing a service to relatively easily make 2FA possible.
+  * Especially Jesse Pollak, the CPO there with my sometimes rambling speeches at the support
+* magnetikonline for the dump script
